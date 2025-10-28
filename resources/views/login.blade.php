@@ -111,14 +111,6 @@
         <div class="mt-3 sm:mt-4 md:mt-6 text-center text-xs sm:text-sm text-gray-600">
             <p>Contact IT Support if there are any problems</p>
         </div>
-
-        <!-- Development Mode Notice -->
-        @if(config('app.debug'))
-        <div class="mt-4 p-3 bg-blue-50 rounded-lg text-xs text-blue-700">
-            <strong>🔧 Development Mode</strong><br>
-            Test: username = <code>admin</code>, password = <code>1234</code>
-        </div>
-        @endif
         
     </div>
 
