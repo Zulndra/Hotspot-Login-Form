@@ -6,6 +6,9 @@ services:
       dockerfile: Dockerfile
     container_name: hotspot-app
     restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+      - ./.env:/var/www/html/.env
     ports:
       - "8080:80"
     environment:
