@@ -59,7 +59,7 @@
             <!-- Hidden fields untuk Mikrotik (nanti production) -->
             <input type="hidden" name="mac" value="{{ request('mac', 'AA:BB:CC:DD:EE:FF') }}">
             <input type="hidden" name="ip" value="{{ request('ip', request()->ip()) }}">
-            <input type="hidden" name="link_orig" value="{{ request('link-orig', 'http://google.com') }}">
+	    <input type="hidden" name="link" value="{{ request('link-orig', request('link-login', 'http://google.com')) }}">
             
             <!-- Username -->
             <div>

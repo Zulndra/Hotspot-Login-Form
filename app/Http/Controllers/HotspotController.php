@@ -3,20 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 
 class HotspotController extends Controller
 {
     public function index(Request $request)
     {
-        // Get Mikrotik parameters (nanti dari redirect)
+        // Ambil parameter dari MikroTik (router akan kirim via query)
         $mac = $request->query('mac', 'AA:BB:CC:DD:EE:FF');
         $ip = $request->query('ip', $request->ip());
         $username = $request->query('username', '');
-        $linkOrig = $request->query('link-orig', 'http://google.com');
-        
-        return view('login', compact('mac', 'ip', 'username', 'linkOrig'));
+
+        // Prefer 'link-orig' lalu 'link-login'
+        $link = $request->query('link-orig', $request->query('link-login', null));
+
+        return view('login', compact('mac', 'ip', 'username', 'link'));
     }
 
     public function authenticate(Request $request)
@@ -28,39 +28,52 @@ class HotspotController extends Controller
 
         $username = $request->input('username');
         $password = $request->input('password');
-        
-        // Development mode: simple authentication
-        // TODO: Integrate dengan database dan Mikrotik API
-        if ($username === 'admin' && $password === '1234') {
-            // Login berhasil
-            session(['user_id' => 1]);
-            session(['username' => $username]);
-            
-            return redirect()->route('status')->with('info', 'Development Mode: Login successful');
+        $mac = $request->input('mac');
+        $ip = $request->input('ip');
+
+        // Ambil link dari form hidden (atau fallback ke query)
+        $link = $request->input('link', $request->input('link-orig', $request->input('link-login', null)));
+
+        // >>> Ganti logika ini dengan cek database / LDAP di production
+        $ok = ($username === 'admin' && $password === '1234');
+
+        if (! $ok) {
+            // kembalikan ke form dengan pesan error
+            return back()->withInput()->with('error', 'Invalid username or password');
         }
-        
-        // Login gagal
-        return back()->with('error', 'Invalid username or password');
+
+        // Jika router memberi "link" -> lakukan post-back ke router agar router
+        // menandai client sebagai authenticated (external UAM flow)
+        if ($link) {
+            // Render view yang auto-submit POST ke $link (tanpa CSRF)
+            return view('post-back', compact('link', 'username', 'password', 'ip', 'mac'));
+        }
+
+        // Jika tidak ada link (mis. testing), set session lokal dan redirect ke status
+        session(['user_id' => 1, 'username' => $username]);
+
+        return redirect()->route('status')->with('info', 'Login successful');
     }
 
     public function status()
     {
-        if (!session('user_id')) {
+        // Pastikan user ter-set di session
+        if (! session('user_id')) {
             return redirect()->route('login');
         }
-        
+
         return view('status');
     }
 
     public function logout()
     {
-        session()->flush();
-        return redirect()->route('login')->with('success', 'Logged out successfully');
+        // Hapus session
+        session()->forget(['user_id', 'username']);
+        return redirect()->route('login')->with('info', 'Logged out');
     }
 
     public function error()
     {
-        $error = session('error', 'An error occurred');
-        return view('error', compact('error'));
+        return view('error'); // optional: buat view error kalau perlu
     }
 }
